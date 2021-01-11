@@ -54,7 +54,7 @@ func (saf *stringAttributeFilter) OnLateArrivingSpans(Decision, []*pdata.Span) e
 
 // Evaluate looks at the trace data and returns a corresponding SamplingDecision.
 func (saf *stringAttributeFilter) Evaluate(_ pdata.TraceID, trace *TraceData) (Decision, error) {
-	saf.logger.Debug("Evaluting spans in string-tag filter")
+	saf.logger.Info("Evaluting spans in string-tag filter")
 	trace.Lock()
 	batches := trace.ReceivedBatches
 	trace.Unlock()
@@ -66,7 +66,8 @@ func (saf *stringAttributeFilter) Evaluate(_ pdata.TraceID, trace *TraceData) (D
 			resource := rs.Resource()
 			if v, ok := resource.Attributes().Get(saf.key); ok {
 				if _, ok := saf.values[v.StringVal()]; ok {
-					return Sampled, nil
+					saf.logger.Info("Trace dropped on resource match", zap.String("rule_key", saf.key))
+					return NotSampled, nil
 				}
 			}
 
@@ -79,7 +80,8 @@ func (saf *stringAttributeFilter) Evaluate(_ pdata.TraceID, trace *TraceData) (D
 						truncableStr := v.StringVal()
 						if len(truncableStr) > 0 {
 							if _, ok := saf.values[truncableStr]; ok {
-								return Sampled, nil
+								saf.logger.Info("Trace dropped on attribte match", zap.String("rule_key", saf.key))
+								return NotSampled, nil
 							}
 						}
 					}
@@ -88,5 +90,5 @@ func (saf *stringAttributeFilter) Evaluate(_ pdata.TraceID, trace *TraceData) (D
 			}
 		}
 	}
-	return NotSampled, nil
+	return Sampled, nil
 }

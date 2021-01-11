@@ -189,7 +189,7 @@ func (tsp *tailSamplingSpanProcessor) samplingPolicyOnTick() {
 }
 
 func (tsp *tailSamplingSpanProcessor) makeDecision(id pdata.TraceID, trace *sampling.TraceData, metrics *policyMetrics) (sampling.Decision, *Policy) {
-	finalDecision := sampling.NotSampled
+	finalDecision := sampling.Sampled
 	var matchingPolicy *Policy = nil
 
 	for i, policy := range tsp.policies {
@@ -208,13 +208,9 @@ func (tsp *tailSamplingSpanProcessor) makeDecision(id pdata.TraceID, trace *samp
 
 			switch decision {
 			case sampling.Sampled:
-				// any single policy that decides to sample will cause the decision to be sampled
-				// the nextConsumer will get the context from the first matching policy
-				finalDecision = sampling.Sampled
 				if matchingPolicy == nil {
 					matchingPolicy = policy
 				}
-
 				_ = stats.RecordWithTags(
 					policy.ctx,
 					[]tag.Mutator{tag.Insert(tagSampledKey, "true")},
@@ -223,6 +219,13 @@ func (tsp *tailSamplingSpanProcessor) makeDecision(id pdata.TraceID, trace *samp
 				metrics.decisionSampled++
 
 			case sampling.NotSampled:
+				// any single policy that decides to sample will cause the decision to be sampled
+				// the nextConsumer will get the context from the first matching policy
+				finalDecision = sampling.NotSampled
+				if matchingPolicy == nil {
+					matchingPolicy = policy
+				}
+
 				_ = stats.RecordWithTags(
 					policy.ctx,
 					[]tag.Mutator{tag.Insert(tagSampledKey, "false")},
