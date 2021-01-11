@@ -66,7 +66,7 @@ func (saf *stringAttributeFilter) Evaluate(_ pdata.TraceID, trace *TraceData) (D
 			resource := rs.Resource()
 			if v, ok := resource.Attributes().Get(saf.key); ok {
 				if _, ok := saf.values[v.StringVal()]; ok {
-					saf.logger.Info("Trace dropped on resource match", zap.String("rule_key", saf.key))
+					saf.logger.Info("Trace dropped on resource match", zap.String("rule_key", saf.key), zap.String("resource_value", v.StringVal()))
 					return NotSampled, nil
 				}
 			}
@@ -80,7 +80,7 @@ func (saf *stringAttributeFilter) Evaluate(_ pdata.TraceID, trace *TraceData) (D
 						truncableStr := v.StringVal()
 						if len(truncableStr) > 0 {
 							if _, ok := saf.values[truncableStr]; ok {
-								saf.logger.Info("Trace dropped on attribte match", zap.String("rule_key", saf.key))
+								saf.logger.Info("Trace dropped on attribute match", zap.String("rule_key", saf.key), zap.String("span_value", v.StringVal())
 								return NotSampled, nil
 							}
 						}
